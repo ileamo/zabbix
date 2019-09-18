@@ -1,7 +1,5 @@
 defmodule Zabbix.API.Client do
-  @moduledoc """
-  Provides an agent for storing session state and implements related functions.
-  """
+  @moduledoc false
 
   use Agent
 
