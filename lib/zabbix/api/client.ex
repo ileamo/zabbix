@@ -69,12 +69,13 @@ defmodule Zabbix.API.Client do
 
   The function will construct and perform request to specified `method` of Zabbix API with specified `params`.
 
-  Used internally by `Zabbix.API.call/2`.
+  Used internally by `Zabbix.API.call/3`.
   """
 
-  def do_request(method, params) do
+  def do_request(method, params, opts) do
     with client <- fetch(:client),
          {:ok, client} <- check_client(client),
+         {:ok, client} <- check_custom_timeout(client, opts),
          {:ok, request} <- prepare_request(method, params),
          {:ok, response} <- Tesla.post(client, @endpoint, request),
          :ok <- check_status(response) do
@@ -114,6 +115,18 @@ defmodule Zabbix.API.Client do
       %Tesla.Client{} -> {:ok, client}
       _ -> {:error, {:badclient, client}}
     end
+  end
+
+  defp check_custom_timeout(client, opts) do
+    new_client = case Keyword.get(opts, :timeout) do
+      nil ->
+        client
+      timeout ->
+        client
+        |> Map.update(:pre, nil, fn middlewares -> List.replace_at(middlewares, 0, {Tesla.Middleware.Timeout, :call, [[timeout: timeout]]}) end)
+        |> Map.update(:adapter, nil, fn _ -> {Tesla.Adapter.Hackney, :call, [[recv_timeout: timeout + 1_000]]} end)
+    end
+    {:ok, new_client}
   end
 
   defp check_status(response) do

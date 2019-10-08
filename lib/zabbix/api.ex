@@ -16,7 +16,7 @@ defmodule Zabbix.API do
 
   ### Do what you want
 
-      iex(3)> Zabbix.API.call("apiinfo.version")
+      iex(3)> Zabbix.API.call("apiinfo.version", %{})
       {:ok, %{"id" => 2, "jsonrpc" => "2.0", "result" => "4.2.6"}}
 
       iex(4)> Zabbix.API.call("host.get", %{hostids: [10001, 10042, 10069], output: ["name"]})
@@ -71,7 +71,7 @@ defmodule Zabbix.API do
 
   ## Examples
 
-      iex> Zabbix.API.call("apiinfo.version")
+      iex> Zabbix.API.call("apiinfo.version", %{})
       {:ok, %{"id" => 2, "jsonrpc" => "2.0", "result" => "4.2.6"}}
 
       iex> Zabbix.API.call("host.get", %{hostids: [10001, 10042, 10069], output: ["name"]})
@@ -85,16 +85,24 @@ defmodule Zabbix.API do
            %{"hostid" => "10069", "name" => "ZBX-APP069"}
          ]
        }}
+
+  Additional option `:timeout` can be passed to override defalut client timeout.
+
+  ## Example with timeout override
+
+      iex> Zabbix.API.call("apiinfo.version", %{}, timeout: 15)
+      {:error, :timeout}
+
   """
 
-  def call(method, params \\ %{}) do
-    Client.do_request(method, params)
+  def call(method, params, opts \\ []) do
+    Client.do_request(method, params, opts)
   end
 
   @doc """
   Authorizes in Zabbix API using `user` and `password` and updates session state with granted token.
 
-  The function will call `call/2` with `user` and `password` as parameters and store granted token in session state in
+  The function will call `call/3` with `user` and `password` as parameters and store granted token in session state in
   case of successful authorization.
 
   ## Examples
@@ -120,7 +128,7 @@ defmodule Zabbix.API do
   @doc """
   Authorizes in Zabbix API using `token` and updates session state with granted token.
 
-  The function will call `call/2` with `token` as parameter and store granted token in session state in
+  The function will call `call/3` with `token` as parameter and store granted token in session state in
   case of successful authorization.
 
   ## Examples
@@ -147,7 +155,7 @@ defmodule Zabbix.API do
   @doc """
   Deauthorizes in Zabbix API and updates session state with `nil` token.
 
-  The function will call `call/2` and store `nil` token in session state in case of successful logout.
+  The function will call `call/3` and store `nil` token in session state in case of successful logout.
 
   ## Examples
 
@@ -156,7 +164,7 @@ defmodule Zabbix.API do
   """
 
   def logout do
-    with {:ok, response} <- call("user.logout"),
+    with {:ok, response} <- call("user.logout", %{}),
          %{"result" => result} <- response,
          true <- result,
          :ok <- Client.set_token(nil) do
