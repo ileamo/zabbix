@@ -59,7 +59,7 @@ defmodule Zabbix.API.Client do
     middleware = [{Tesla.Middleware.Headers, [{"user-agent", "elixir/zabbix"}]} | middleware]
     middleware = [{Tesla.Middleware.Timeout, timeout: timeout} | middleware]
     #    middleware = [Tesla.Middleware.Logger | middleware]
-    adapter = {Tesla.Adapter.Hackney, [recv_timeout: timeout + 1_000]}
+    adapter = {Tesla.Adapter.Hackney, [:insecure, recv_timeout: timeout + 1_000]}
     client = Tesla.client(middleware, adapter)
     Agent.update(__MODULE__, &init(&1, client))
   end
